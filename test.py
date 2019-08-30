@@ -19,6 +19,35 @@ import yaml
 import math
 from model import ft_net, ft_net_dense, ft_net_NAS, PCB, PCB_test
 
+name_dict = {
+    "benzo":1,
+    "fujimoto":2,
+    "hasegawa":3,
+    "hoshina":4,
+    "iwasaki":5,
+    "izumiya":6,
+    "kakoi":7,
+    "kano":8,
+    "keita":9,
+    "kobayashi":10,
+    "kondo":11,
+    "kuda":12,
+    "maemichi":13,
+    "nakayama":14,
+    "natsuo":15,
+    "nonoyama":16,
+    "obo":17,
+    "ogura":18,
+    "ohiwa":19,
+    "shirai":20,
+    "tanaka":21,
+    "teppei":22,
+    "umeki":23,
+    "utsumi":24,
+    "yo":25,
+    "yoshiwara":26
+}
+
 #fp16
 try:
     from apex.fp16_utils import *
@@ -31,7 +60,7 @@ except ImportError: # will be 3.x series
 parser = argparse.ArgumentParser(description='Training')
 parser.add_argument('--gpu_ids',default='0', type=str,help='gpu_ids: e.g. 0  0,1,2  0,2')
 parser.add_argument('--which_epoch',default='last', type=str, help='0,1,2,3...or last')
-parser.add_argument('--test_dir',default='../Market/pytorch',type=str, help='./test_data')
+parser.add_argument('--test_dir',default='./data/Market/pytorch',type=str, help='./test_data')
 parser.add_argument('--name', default='ft_ResNet50', type=str, help='save model path')
 parser.add_argument('--batchsize', default=256, type=int, help='batchsize')
 parser.add_argument('--use_dense', action='store_true', help='use densenet121' )
@@ -148,6 +177,7 @@ def fliplr(img):
 def extract_feature(model,dataloaders):
     features = torch.FloatTensor()
     count = 0
+    print("data size:", len(dataloaders))
     for data in dataloaders:
         img, label = data
         n, c, h, w = img.size()
@@ -182,19 +212,34 @@ def extract_feature(model,dataloaders):
         features = torch.cat((features,ff.data.cpu()), 0)
     return features
 
+# def get_id(img_path):
+#     camera_id = []
+#     labels = []
+#     for path, v in img_path:
+#         #filename = path.split('/')[-1]
+#         filename = os.path.basename(path)
+#         label = filename[0:4]
+#         camera = filename.split('c')[1]
+#         if label[0:2]=='-1':
+#             labels.append(-1)
+#         else:
+#             labels.append(int(label))
+#         camera_id.append(int(camera[0]))
+#     return camera_id, labels
+
 def get_id(img_path):
     camera_id = []
     labels = []
     for path, v in img_path:
-        #filename = path.split('/')[-1]
         filename = os.path.basename(path)
-        label = filename[0:4]
-        camera = filename.split('c')[1]
-        if label[0:2]=='-1':
+        splitted_filename = filename.split('_')
+        label = splitted_filename[0]
+        camera = splitted_filename[1].split('-')[-1]
+        if label[0:7]=='unknown':
             labels.append(-1)
         else:
-            labels.append(int(label))
-        camera_id.append(int(camera[0]))
+            labels.append(int(name_dict[label]))
+        camera_id.append(int(camera[:8]))   # 同じ日に撮られた写真は同じカメラタグを貼る（評価時に照合しないようにする）
     return camera_id, labels
 
 gallery_path = image_datasets['gallery'].imgs
@@ -252,10 +297,13 @@ with torch.no_grad():
     
 # Save to Matlab for check
 result = {'gallery_f':gallery_feature.numpy(),'gallery_label':gallery_label,'gallery_cam':gallery_cam,'query_f':query_feature.numpy(),'query_label':query_label,'query_cam':query_cam}
-scipy.io.savemat('pytorch_result.mat',result)
+# scipy.io.savemat('pytorch_result.mat',result)
+scipy.io.savemat('test1_20190820_pytorch_result.mat',result)
+print(result['query_label'])
 
 print(opt.name)
-result = './model/%s/result.txt'%opt.name
+# result = './model/%s/result.txt'%opt.name
+result = './model/%s/test1_20190820_pytorch_result.txt'%opt.name
 os.system('python evaluate_gpu.py | tee -a %s'%result)
 
 if opt.multi:

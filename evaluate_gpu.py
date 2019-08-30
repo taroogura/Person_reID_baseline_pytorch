@@ -8,10 +8,19 @@ import os
 # Evaluate
 def evaluate(qf,ql,qc,gf,gl,gc):
     query = qf.view(-1,1)
-    # print(query.shape)
+
+    # print("gf.shape")
+    print(gf.shape)
+    # print("query.shape")
+    print(query.shape)
     score = torch.mm(gf,query)
+    # print("qf[:16] :", qf[:16])
+    # print("query[:16] :", query[:16])
+
     score = score.squeeze(1).cpu()
+    # print("score[:16] :", score[:16])
     score = score.numpy()
+
     # predict index
     index = np.argsort(score)  #from small to large
     index = index[::-1]
@@ -47,6 +56,7 @@ def compute_mAP(index, good_index, junk_index):
     rows_good = rows_good.flatten()
     
     cmc[rows_good[0]:] = 1
+    # print("ngood",ngood)
     for i in range(ngood):
         d_recall = 1.0/ngood
         precision = (i+1)*1.0/(rows_good[i]+1)
@@ -55,11 +65,20 @@ def compute_mAP(index, good_index, junk_index):
         else:
             old_precision=1.0
         ap = ap + d_recall*(old_precision + precision)/2
+        # if(i < 10):
+        #     print("ap:", ap)
+        #     print("precision:", precision)
+
+    # print("final ap:", precision)
+    # print("final cmc[:5]:", cmc[:5])
+    # print("final cmc[-5:]:", cmc[-5:])
 
     return ap, cmc
 
 ######################################################################
-result = scipy.io.loadmat('pytorch_result.mat')
+# result = scipy.io.loadmat('pytorch_result.mat')
+result = scipy.io.loadmat('test1_20190820_pytorch_result.mat')
+
 query_feature = torch.FloatTensor(result['query_f'])
 query_cam = result['query_cam'][0]
 query_label = result['query_label'][0]
@@ -90,6 +109,8 @@ for i in range(len(query_label)):
     CMC = CMC + CMC_tmp
     ap += ap_tmp
     #print(i, CMC_tmp[0])
+
+    # break
 
 CMC = CMC.float()
 CMC = CMC/len(query_label) #average CMC

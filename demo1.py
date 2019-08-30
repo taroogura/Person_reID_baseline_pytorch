@@ -78,44 +78,45 @@ def sort_img(qf, ql, qc, gf, gl, gc):
 
 
 
-# max_i = opts.query_index
+max_i = opts.query_index
+for i in range(max_i):
+    print("i: ", i)
+    # i = opts.query_index
+    index = sort_img(query_feature[i],query_label[i],query_cam[i],gallery_feature,gallery_label,gallery_cam)
 
-i = opts.query_index
-index = sort_img(query_feature[i],query_label[i],query_cam[i],gallery_feature,gallery_label,gallery_cam)
+    ########################################################################
+    # Visualize the rank result
 
-########################################################################
-# Visualize the rank result
-
-query_path, _ = image_datasets['query'].imgs[i]
-query_label = query_label[i]
-print(query_path)
-print('Top 10 images are as follow:')
-try: # Visualize Ranking Result 
-    # Graphical User Interface is needed
-    fig = plt.figure(figsize=(16,4))
-    ax = plt.subplot(1,11,1)
-    ax.axis('off')
-    imshow(query_path,'query')
-    for i in range(10):
-        ax = plt.subplot(1,11,i+2)
+    query_path, _ = image_datasets['query'].imgs[i]
+    query_label_i = query_label[i]
+    print(query_path)
+    print('Top 10 images are as follow:')
+    try: # Visualize Ranking Result 
+        # Graphical User Interface is needed
+        fig = plt.figure(figsize=(16,4))
+        ax = plt.subplot(1,11,1)
         ax.axis('off')
-        img_path, _ = image_datasets['gallery'].imgs[index[i]]
-        label = gallery_label[index[i]]
-        imshow(img_path)
-        if label == query_label:
-            ax.set_title('%d'%(i+1), color='green')
-        else:
-            ax.set_title('%d'%(i+1), color='red')
-        print(img_path)
-except RuntimeError:
-    for i in range(10):
-        img_path = image_datasets.imgs[index[i]]
-        print(img_path[0])
-    print('If you want to see the visualization of the ranking result, graphical user interface is needed.')
+        imshow(query_path,'query')
+        for k in range(10):
+            ax = plt.subplot(1,11,k+2)
+            ax.axis('off')
+            img_path, _ = image_datasets['gallery'].imgs[index[k]]
+            label = gallery_label[index[k]]
+            imshow(img_path)
+            if label == query_label_i:
+                ax.set_title('%d'%(k+1), color='green')
+            else:
+                ax.set_title('%d'%(k+1), color='red')
+            print(img_path)
+    except RuntimeError:
+        for j in range(10):
+            img_path = image_datasets.imgs[index[j]]
+            print(img_path[0])
+        print('If you want to see the visualization of the ranking result, graphical user interface is needed.')
 
-demo_dir = "demo_results"
-query_dir = os.path.join(demo_dir, query_label)
-subprocess.call(["mkdir", "-p", query_dir]);
-result_path = os.path.join(query_dir, query_index+".png")
+    demo_dir = "demo_results"
+    query_dir = os.path.join(demo_dir, str(query_label_i))
+    subprocess.call(["mkdir", "-p", query_dir]);
+    result_path = os.path.join(query_dir, str(i)+".png")
 
-fig.savefig(result_path)
+    fig.savefig(result_path)
